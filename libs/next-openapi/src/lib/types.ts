@@ -1,4 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { OpenAPIV3 } from 'openapi-types';
+
+interface TagGroupDefinition {
+  title: string;
+  tags: string[];
+}
+interface ServerDefinition {
+  url: string;
+  description: string;
+}
+export type NextOpenApiConfig = {
+  title: string;
+  description: string;
+  version: string;
+  source: string;
+  tagGroups: TagGroupDefinition[];
+  security: Record<string, OpenAPIV3.SecuritySchemeObject>;
+  servers: ServerDefinition[];
+};
 
 export type ModelField = {
   name: string;

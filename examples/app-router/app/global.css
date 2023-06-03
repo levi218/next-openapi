@@ -397,3 +397,15 @@ summary svg {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+._auth-btn {
+  border: 1px solid rgb(50, 50, 159);
+  color: rgb(50, 50, 159);
+  width: fit-content;
+  margin-left: 40px;
+  padding: 5px;
+  cursor: pointer;
+}
+._auth-btn:hover {
+  border: 1px solid rgba(50, 50, 159, 0.5);
+}

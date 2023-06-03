@@ -1,0 +1,7 @@
+src/
+node_modules/
+.idea
+.eslint*
+tsconfig*
+webpack.config.js
+redoc-try-out.png

@@ -1,3 +1,5 @@
+import faker from '@faker-js/faker';
+import { JSONSchemaFaker } from 'json-schema-faker';
 import { OpenAPIV3 } from 'openapi-types';
 import ts, {
   EnumDeclaration,
@@ -13,6 +15,8 @@ import ts, {
   UnionTypeNode,
 } from 'typescript';
 import { Enum, EnumValue, HttpStatusCode, Model, ModelField } from './types';
+JSONSchemaFaker.extend('faker', () => faker);
+JSONSchemaFaker.option({ alwaysFakeOptionals: true });
 
 function commentToString(
   comment: string | NodeArray<JSDocComment> | undefined
@@ -107,37 +111,46 @@ export const modelDictToOpenApi = (
   schemas: Record<string, OpenAPIV3.SchemaObject>;
 } => {
   const tags: OpenAPIV3.TagObject[] = [];
-  const schemas: [string, OpenAPIV3.TagObject][] = [];
+  const schemas: [string, OpenAPIV3.SchemaObject][] = [];
   Object.values(modelDict).forEach((model) => {
-    schemas.push([
-      model.name,
-      {
-        name: model.name,
-        title: model.name,
-        description: model.description,
-        type: 'object',
-        properties: Object.fromEntries(
-          model.fields.map((fieldDef) => {
-            return [
-              fieldDef.name,
-              {
-                type: fieldDef.type,
-                description: fieldDef.description ?? fieldDef.name,
-              },
-            ];
-          })
-        ),
-        required: model.fields
-          .filter((fieldDef) => {
-            return !fieldDef.optional;
-          })
-          .map((e) => e.name),
-      } as OpenAPIV3.TagObject,
-    ]);
+    const schema = {
+      name: model.name,
+      title: model.name,
+      description: model.description,
+      type: 'object',
+      additionalProperties: false,
+      properties: Object.fromEntries(
+        model.fields.map((fieldDef) => {
+          return [
+            fieldDef.name,
+            {
+              type: fieldDef.type,
+              ...(fieldDef.type === 'object'
+                ? {
+                    additionalProperties: false,
+                  }
+                : {}),
+              description: fieldDef.description ?? fieldDef.name,
+            },
+          ];
+        })
+      ),
+      required: model.fields
+        .filter((fieldDef) => {
+          return !fieldDef.optional;
+        })
+        .map((e) => e.name),
+    } as OpenAPIV3.SchemaObject;
+    console.log(JSON.stringify(JSONSchemaFaker.generate(schema)));
+    schema.example = JSON.parse(
+      JSON.stringify(JSONSchemaFaker.generate(schema))
+    );
+
+    schemas.push([model.name, schema]);
     tags.push({
       name: model.name,
       'x-displayName': model.name,
-      description: `<SchemaDefinition schemaRef="#/components/schemas/${model.name}" exampleRef="#/components/examples/${model.name}" showReadOnly={true} showWriteOnly={true} />`,
+      description: `<SchemaDefinition schemaRef="#/components/schemas/${model.name}" showReadOnly={true} showWriteOnly={true} />`,
     } as OpenAPIV3.TagObject);
   });
   return { tags, schemas: Object.fromEntries(schemas) };
@@ -216,13 +229,16 @@ export const modelNamesToRequestParams = (
           (e) => e?.name === 'default'
         )?.value;
         console.log('defaultValue', defaultValue);
+        const schema = {
+          type: field.type,
+          ...(defaultValue ? { default: defaultValue } : {}),
+        } as OpenAPIV3.SchemaObject;
+        const example = JSONSchemaFaker.generate(schema);
         return {
           in: 'query',
           name: field.name,
-          schema: {
-            type: field.type,
-            ...(defaultValue ? { default: defaultValue } : {}),
-          },
+          schema,
+          example,
           description: field.description,
           required: !field.optional,
         };

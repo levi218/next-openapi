@@ -3,7 +3,7 @@ import { HttpStatusCode } from 'axios';
 import { glob } from 'glob';
 import { OpenAPIV3 } from 'openapi-types';
 import ts, { FunctionDeclaration, TypeAliasDeclaration } from 'typescript';
-import { Enum, Model } from './types';
+import { Enum, Model, NextOpenApiConfig } from './types';
 import {
   getComments,
   getOriginalTypeFromSymbol,
@@ -60,8 +60,6 @@ function analyzeModels(
       const def = processObjectType(typeChecker, statement);
       modelDictionary[def.name] = def;
     }
-    // if (ts.isFunctionDeclaration(statement)) {
-    // }
   }
 }
 
@@ -214,7 +212,69 @@ function processRoutes(
     methodDefinitions: {},
   };
 }
-export async function nextOpenapi(): Promise<OpenAPIV3.Document> {
+
+function createApiDocs(
+  config: NextOpenApiConfig,
+  paths: OpenAPIV3.PathsObject,
+  apiRouteTags: string[],
+  convertedModels: {
+    tags: OpenAPIV3.TagObject[];
+    schemas: Record<string, OpenAPIV3.SchemaObject>;
+  }
+) {
+  return {
+    openapi: '3.0.0',
+    info: {
+      version: config?.version ?? '0.0.1',
+      title: config?.title ?? 'Next OpenAPI',
+      description: config?.description,
+    },
+    servers: config?.servers ?? [
+      {
+        url: 'http://localhost:4200',
+      },
+    ],
+    paths,
+    tags: [
+      ...convertedModels.tags,
+      ...Array.from(apiRouteTags).map((e) => ({ name: e, 'x-displayName': e })),
+    ],
+    'x-tagGroups': [
+      ...(config?.tagGroups ?? [
+        {
+          name: 'API',
+          tags: [...apiRouteTags],
+        },
+      ]),
+      {
+        name: 'Models',
+        tags: [...convertedModels.tags.map((e) => e.name)],
+      },
+    ],
+    components: {
+      securitySchemes: config?.security ?? {
+        BasicAuth: {
+          type: 'http',
+          scheme: 'basic',
+        },
+        BearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+        },
+        ApiKeyAuth: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'X-API-Key',
+        },
+      },
+      schemas: convertedModels.schemas,
+    },
+  } as OpenAPIV3.Document;
+}
+
+export async function nextOpenapi(
+  config: NextOpenApiConfig
+): Promise<OpenAPIV3.Document> {
   const routeFiles = await glob('**/route.ts', {
     root: 'examples/app-router/app/api/example-api',
   });
@@ -225,6 +285,7 @@ export async function nextOpenapi(): Promise<OpenAPIV3.Document> {
   // Parse the main source file and look for type definitions.
   const paths: OpenAPIV3.PathsObject = {};
   const apiRouteTags = new Set<string>();
+
   const enumDictionary: Record<string, Enum> = {};
   const modelDictionary: Record<string, Model> = {};
 
@@ -245,74 +306,11 @@ export async function nextOpenapi(): Promise<OpenAPIV3.Document> {
       methodTags.forEach((e) => apiRouteTags.add(e));
     }
   }
-  console.log(enumDictionary);
-  console.log(modelDictionary);
   const convertedModels = modelDictToOpenApi(modelDictionary);
-  return {
-    openapi: '3.0.0',
-    info: {
-      version: '1.0.0',
-      title: 'Test Document',
-      description: `
-     
-      `,
-    },
-    servers: [
-      {
-        url: 'http://localhost',
-      },
-      {
-        url: 'http://localhost:3001',
-        description: 'Local Server 2',
-      },
-    ],
+  return createApiDocs(
+    config,
     paths,
-    tags: [
-      // {
-      //   name: 'apis',
-      //   'x-displayName': 'API groups example',
-      // } as OpenAPIV3.TagObject,
-      // {
-      //   name: 'model_schema_a',
-      //   'x-displayName': 'TestSchema',
-      //   description: `<SchemaDefinition schemaRef="#/components/schemas/TestSchema" exampleRef="#/components/examples/Order" showReadOnly={true} showWriteOnly={true} />`,
-      // } as OpenAPIV3.TagObject,
-      ...convertedModels.tags,
-      ...Array.from(apiRouteTags).map((e) => ({ name: e, 'x-displayName': e })),
-    ],
-    'x-tagGroups': [
-      {
-        name: 'API',
-        tags: [
-          // 'apis',
-          ...apiRouteTags,
-        ],
-      },
-      {
-        name: 'Models',
-        tags: [
-          // 'model_schema_a',
-          ...convertedModels.tags.map((e) => e.name),
-        ],
-      },
-    ],
-    components: {
-      securitySchemes: {
-        BasicAuth: {
-          type: 'http',
-          scheme: 'basic',
-        },
-        BearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-        },
-        ApiKeyAuth: {
-          type: 'apiKey',
-          in: 'header',
-          name: 'X-API-Key',
-        },
-      },
-      schemas: convertedModels.schemas,
-    },
-  } as OpenAPIV3.Document;
+    Array.from(apiRouteTags),
+    convertedModels
+  );
 }
