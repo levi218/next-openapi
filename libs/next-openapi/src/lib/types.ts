@@ -10,13 +10,14 @@ interface ServerDefinition {
   description: string;
 }
 export type NextOpenApiConfig = {
-  title: string;
-  description: string;
-  version: string;
-  source: string;
-  tagGroups: TagGroupDefinition[];
-  security: Record<string, OpenAPIV3.SecuritySchemeObject>;
-  servers: ServerDefinition[];
+  title?: string;
+  root: string;
+  description?: string;
+  version?: string;
+  source?: string;
+  tagGroups?: TagGroupDefinition[];
+  security?: Record<string, OpenAPIV3.SecuritySchemeObject>;
+  servers?: ServerDefinition[];
 };
 
 export type ModelField = {

@@ -273,10 +273,12 @@ function createApiDocs(
 }
 
 export async function nextOpenapi(
-  config: NextOpenApiConfig
+  config: NextOpenApiConfig = {
+    root: 'examples/app-router/app/api/example-api'
+  }
 ): Promise<OpenAPIV3.Document> {
   const routeFiles = await glob('**/route.ts', {
-    root: 'examples/app-router/app/api/example-api',
+    root: config.root,
   });
   const program = ts.createProgram(routeFiles, {});
 

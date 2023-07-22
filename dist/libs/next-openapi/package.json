@@ -1,0 +1,17 @@
+{
+  "name": "@next-openapi/next-openapi",
+  "version": "0.0.1",
+  "type": "commonjs",
+  "dependencies": {
+    "@faker-js/faker": "^8.0.2",
+    "axios": "1.4.0",
+    "glob": "^10.2.6",
+    "json-schema-faker": "0.5.0-rcv.46",
+    "next": "13.4.1"
+  },
+  "peerDependencies": {
+    "tslib": "2.5.3"
+  },
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts"
+}
