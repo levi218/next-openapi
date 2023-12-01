@@ -64,8 +64,8 @@ export async function POST(
   return NextResponse.json({ message: 'OK' });
 }
 
-const POST3 = POST;
-export const POST2 = POST3;
+// const POST3 = POST;
+// export const POST2 = POST3;
 
 export function FETCH(
   request: NextTypedRequest<PostDocsRequestParams, PostDocsRequestBody>
@@ -73,4 +73,4 @@ export function FETCH(
   return NextResponse.json({ message: 'OK' });
 }
 
-export default POST;
+// export default POST;

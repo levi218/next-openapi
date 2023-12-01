@@ -1,5 +1,16 @@
 {
-  "name": "@next-openapi/next-openapi",
-  "version": "0.0.1",
-  "type": "commonjs"
+  "name": "next-openapi",
+  "version": "0.0.2",
+  "type": "commonjs",
+  "author": "Nguyen Quang Huy <nguyenquanghuy1997@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/levi218/next-openapi.git"
+  },
+  "keywords": ["openapi", "nextjs", "api-documentation", "typescript"],
+  "bugs": {
+    "url": "https://github.com/levi218/next-openapi/issues"
+  },
+  "homepage": "https://github.com/levi218/next-openapi"
 }
